@@ -22,6 +22,7 @@
             z-index: 5000; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
         .header-title { font-size: 1.6rem; font-weight: bold; }
+        .header-sub { font-size: 0.7rem; opacity: 0.9; }
 
         main { padding: 85px 10px 20px; }
         
@@ -29,7 +30,6 @@
         .dash-card { background: var(--white); border-radius: 12px; padding: 15px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .dash-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; border-bottom: 2px solid #eee; padding-bottom: 5px; }
         
-        /* Dashboard Zeilen */
         .stat-row { display: flex; justify-content: space-between; margin: 5px 0; align-items: center; }
         .stat-label { font-size: 0.9rem; color: #555; font-weight: bold; }
         .stat-value { font-size: 1.3rem; font-weight: 900; }
@@ -69,6 +69,7 @@
 
 <header>
     <div class="header-title">Wolfsegg 2026</div>
+    <div class="header-sub">Powered by Open Meteo</div>
 </header>
 
 <main>
@@ -157,7 +158,7 @@ async function fetchData(m) {
         })).filter(item => item.min !== null);
         localStorage.setItem('w_2026_final_vFinal', JSON.stringify(cur));
         render();
-    } catch(e) { alert("Fehler!"); }
+    } catch(e) { alert("Keine Daten vorhanden!"); }
 }
 
 function exportCSV(m) {
