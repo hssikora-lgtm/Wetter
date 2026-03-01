@@ -1,0 +1,26 @@
+{
+  "name": "Wolfsegg 2026 Wetter",
+  "short_name": "Wolfsegg 26",
+  "description": "Wetterdaten Wolfsegg 2026",
+  "lang": "de-AT",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f1f2f6",
+  "theme_color": "#2c3e50",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
