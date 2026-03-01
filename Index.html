@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Wolfsegg 2026</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2c3e50">
+    <link rel="apple-touch-icon" href="icon-512.png">
+    <link rel="icon" type="image/png" href="icon-512.png">
+
+    <style>
+        :root { --primary: #2c3e50; --bg: #f1f2f6; --white: #ffffff; --negative: #e67e22; }
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #000; }
+        
+        header { 
+            background: var(--primary); color: white; text-align: center; 
+            position: fixed; top: 0; left: 0; width: 100%; height: 70px;
+            display: flex; flex-direction: column; justify-content: center;
+            z-index: 5000; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .header-title { font-size: 1.6rem; font-weight: bold; }
+
+        main { padding: 85px 10px 20px; }
+        
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 25px; }
+        .dash-card { background: var(--white); border-radius: 12px; padding: 15px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .dash-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; border-bottom: 2px solid #eee; padding-bottom: 5px; }
+        
+        /* Dashboard Zeilen */
+        .stat-row { display: flex; justify-content: space-between; margin: 5px 0; align-items: center; }
+        .stat-label { font-size: 0.9rem; color: #555; font-weight: bold; }
+        .stat-value { font-size: 1.3rem; font-weight: 900; }
+
+        .month-card { background: var(--white); border-radius: 15px; margin-bottom: 40px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: relative; }
+        
+        .sticky-month-bar { 
+            position: -webkit-sticky; position: sticky; 
+            top: 70px; background: #ffffff; z-index: 3000; 
+            border-bottom: 2px solid #ddd; width: 100%;
+            border-radius: 15px 15px 0 0;
+        }
+        
+        .bar-main { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; }
+        .btn-group { display: flex; gap: 6px; }
+
+        .column-labels { 
+            display: grid; grid-template-columns: repeat(4, 1fr); 
+            padding: 10px 0; background: #f8f9fa; font-size: 0.85rem; font-weight: bold; color: #888; text-align: center;
+        }
+
+        .btn { border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; padding: 8px 12px; font-size: 0.8rem; }
+        .btn-update { background: #00a8ff; }
+        .btn-csv { background: #2ecc71; }
+        .btn-up { background: #000; min-width: 35px; }
+
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        td { padding: 16px 2px; text-align: center; font-size: 1.5rem; font-weight: bold; border-bottom: 1px solid #eee; color: #000; }
+        
+        .info-txt { font-size: 1.1rem; font-weight: normal; color: #555; display: block; margin-top: 5px; }
+        .minus-val { color: #e67e22 !important; }
+
+        footer { text-align: center; padding: 40px 10px; font-size: 0.9rem; color: #95a5a6; font-style: italic; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-title">Wolfsegg 2026</div>
+</header>
+
+<main>
+    <div id="dash" class="dashboard-grid"></div>
+    <div id="cont"></div>
+</main>
+
+<footer>by HauniBauni</footer>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+const mDays = {"Jänner":31,"Februar":28,"März":31,"April":30,"Mai":31,"Juni":30,"Juli":31,"August":31,"September":30,"Oktober":31,"November":30,"Dezember":31};
+const mIdx = {"Jänner":"01","Februar":"02","März":"03","April":"04","Mai":"05","Juni":"06","Juli":"07","August":"08","September":"09","Oktober":"10","November":"11","Dezember":"12"};
+
+let cur = JSON.parse(localStorage.getItem('w_2026_final_vFinal')) || {};
+
+function getIcon(code) {
+    if (code === 0) return "☀️ Sonne";
+    if (code <= 3) return "☁️ Bewölkt";
+    if (code <= 67) return "🌧️ Regen";
+    if (code <= 77) return "❄️ Schnee";
+    return "☁️";
+}
+
+function render() {
+    let dH = '', cH = '';
+    Object.keys(mDays).forEach(m => {
+        const data = cur[m] || [], c = data.length;
+        const aT = c ? (data.reduce((s,r)=>s+r.avg,0)/c).toFixed(1) : "--";
+        const aMin = c ? Math.min(...data.map(r => r.min)).toFixed(1) : "--";
+        const aMax = c ? Math.max(...data.map(r => r.max)).toFixed(1) : "--";
+        
+        dH += `<div class="dash-card">
+                <div class="dash-title">${m} Ø</div>
+                <div class="stat-row"><span class="stat-label">Gesamt</span><span class="stat-value ${parseFloat(aT) < 0 ? 'minus-val' : ''}">${aT}°</span></div>
+                <div class="stat-row"><span class="stat-label">Min</span><span class="stat-value">${aMin}°</span></div>
+                <div class="stat-row"><span class="stat-label">Max</span><span class="stat-value">${aMax}°</span></div>
+                <a href="#view-${m}" style="background:#34495e;color:white;padding:10px;margin-top:10px;text-decoration:none;border-radius:6px;display:block;font-size:0.85rem;font-weight:bold;">DETAILS</a>
+               </div>`;
+        
+        cH += `<div class="month-card" id="view-${m}">
+                <div class="sticky-month-bar">
+                    <div class="bar-main">
+                        <h2 style="margin:0; font-size:1.4rem;">${m} 2026</h2>
+                        <div class="btn-group">
+                            <button class="btn btn-update" onclick="fetchData('${m}')">Update</button>
+                            <button class="btn btn-csv" onclick="exportCSV('${m}')">CSV</button>
+                            <button class="btn btn-up" onclick="window.scrollTo(0,0)">↑</button>
+                        </div>
+                    </div>
+                    <div class="column-labels"><span>Datum</span><span>Min</span><span>Max</span><span>Schnitt</span></div>
+                </div>
+                <table>
+                    <tbody>${data.length ? data.map(r=>`<tr>
+                        <td style="font-size: 1.4rem;">${r.d}</td>
+                        <td>${r.min}°</td>
+                        <td>${r.max}°</td>
+                        <td class="${r.avg < 0 ? 'minus-val' : ''}">${r.avg.toFixed(1).replace('.', ',')}°<span class="info-txt">${r.info||''}</span></td>
+                    </tr>`).join('') : '<tr><td colspan="4" style="padding:20px;">Keine Daten vorhanden.</td></tr>'}</tbody>
+                </table>
+               </div>`;
+    });
+    document.getElementById('dash').innerHTML = dH; 
+    document.getElementById('cont').innerHTML = cH;
+}
+
+async function fetchData(m) {
+    const year = 2026, month = mIdx[m], today = new Date();
+    const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+    let endStr = `${year}-${month}-${mDays[m]}`;
+    if (yesterday < new Date(endStr)) { endStr = yesterday.toISOString().split('T')[0]; }
+    const url = `https://archive-api.open-meteo.com/v1/archive?latitude=48.11&longitude=13.67&start_date=${year}-${month}-01&end_date=${endStr}&daily=temperature_2m_max,temperature_2m_min,temperature_2m_mean,weather_code&timezone=Europe%2FBerlin`;
+    try {
+        const res = await fetch(url);
+        const json = await res.json();
+        const d = json.daily;
+        cur[m] = d.time.map((t, i) => ({
+            d: t.split('-')[2] + "." + t.split('-')[1] + ".",
+            min: d.temperature_2m_min[i],
+            max: d.temperature_2m_max[i],
+            avg: d.temperature_2m_mean[i],
+            info: getIcon(d.weather_code[i])
+        })).filter(item => item.min !== null);
+        localStorage.setItem('w_2026_final_vFinal', JSON.stringify(cur));
+        render();
+    } catch(e) { alert("Fehler!"); }
+}
+
+function exportCSV(m) {
+    const data = cur[m];
+    if(!data) return;
+    let csv = "Datum;Min;Max;Schnitt\n";
+    data.forEach(r => { 
+        csv += `${r.d};${r.min.toString().replace('.', ',')};${r.max.toString().replace('.', ',')};${r.avg.toFixed(1).replace('.', ',')}\n`; 
+    });
+    const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `Wolfsegg_${m}_2026.csv`;
+    link.click();
+}
+
+render();
+</script>
+</body>
+</html>
