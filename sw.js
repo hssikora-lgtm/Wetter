@@ -1,6 +1,6 @@
 /* ===== Wolfsegg 2026 – Service Worker v1.1.2 ===== */
 
-const CACHE_NAME = "wolfsegg-2026-v1.1.2";
+const CACHE_NAME = "wolfsegg-2026-v1.1.4";
 
 // WICHTIG: Hier dürfen nur Dateien stehen, die wirklich auf GitHub existieren!
 const ASSETS_TO_CACHE = [
