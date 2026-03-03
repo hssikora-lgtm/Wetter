@@ -1,16 +1,15 @@
-/* ===== Wolfsegg 2026 – Service Worker v1.1.2 ===== */
+/* ===== Wolfsegg 2026 – GeoSphere Update v1.2.0 ===== */
 
-const CACHE_NAME = "wolfsegg-2026-v1.1.4";
+const CACHE_NAME = "wolfsegg-2026-v1.2.0";
 
-// WICHTIG: Hier dürfen nur Dateien stehen, die wirklich auf GitHub existieren!
 const ASSETS_TO_CACHE = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./icon-512.png" 
+  "./icon-512.png"
 ];
 
-// Installieren
+// Installation: Neuen Cache anlegen
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -20,13 +19,14 @@ self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
 
-// Aktivieren & Alten Cache löschen
+// Aktivierung: ALLE alten Caches löschen
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) {
+            console.log("Lösche alten Cache:", cache);
             return caches.delete(cache);
           }
         })
@@ -36,11 +36,11 @@ self.addEventListener("activate", (event) => {
   return self.clients.claim();
 });
 
-// Fetch
+// Fetch: Netzwerk-First Strategie für die index.html, damit Updates sofort ziehen
 self.addEventListener("fetch", (event) => {
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+    fetch(event.request).catch(() => {
+      return caches.match(event.request);
     })
   );
 });
