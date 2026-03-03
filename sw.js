@@ -1,7 +1,8 @@
-/* ===== Wolfsegg 2026 – GeoSphere Update v1.2.0 ===== */
+/* ===== Wolfsegg 2026 – Stabiler Service Worker v2.1.0 ===== */
 
-const CACHE_NAME = "wolfsegg-2026-v1.2.0";
+const CACHE_NAME = "wolfsegg-openmeteo-v2.1.0";
 
+// Diese Dateien werden offline gespeichert
 const ASSETS_TO_CACHE = [
   "./",
   "./index.html",
@@ -9,7 +10,7 @@ const ASSETS_TO_CACHE = [
   "./icon-512.png"
 ];
 
-// Installation: Neuen Cache anlegen
+// Installation
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -19,14 +20,13 @@ self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
 
-// Aktivierung: ALLE alten Caches löschen
+// Aktivierung: Löscht alle alten GeoSphere-Caches
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) {
-            console.log("Lösche alten Cache:", cache);
             return caches.delete(cache);
           }
         })
@@ -36,11 +36,12 @@ self.addEventListener("activate", (event) => {
   return self.clients.claim();
 });
 
-// Fetch: Netzwerk-First Strategie für die index.html, damit Updates sofort ziehen
+// Netzwerk-Anfragen bearbeiten
 self.addEventListener("fetch", (event) => {
   event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
+    caches.match(event.request).then((response) => {
+      // Gibt Datei aus Cache zurück oder lädt sie aus dem Netz
+      return response || fetch(event.request);
     })
   );
 });
