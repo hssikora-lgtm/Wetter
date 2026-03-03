@@ -34,33 +34,15 @@
         .stat-label { font-size: 0.9rem; color: #555; font-weight: bold; }
         .stat-value { font-size: 1.3rem; font-weight: 900; }
 
+        .minus-val { color: #e67e22 !important; }
+
         .month-card { background: var(--white); border-radius: 15px; margin-bottom: 40px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: relative; }
-        
-        .sticky-month-bar { 
-            position: -webkit-sticky; position: sticky; 
-            top: 70px; background: #ffffff; z-index: 3000; 
-            border-bottom: 2px solid #ddd; width: 100%;
-            border-radius: 15px 15px 0 0;
-        }
-        
+        .sticky-month-bar { position: sticky; top: 70px; background: #ffffff; z-index: 3000; border-bottom: 2px solid #ddd; border-radius: 15px 15px 0 0; }
         .bar-main { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; }
-        .btn-group { display: flex; gap: 6px; }
-
-        .column-labels { 
-            display: grid; grid-template-columns: repeat(4, 1fr); 
-            padding: 10px 0; background: #f8f9fa; font-size: 0.85rem; font-weight: bold; color: #888; text-align: center;
-        }
-
-        .btn { border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; padding: 8px 12px; font-size: 0.8rem; }
-        .btn-update { background: #00a8ff; }
-        .btn-csv { background: #2ecc71; }
-        .btn-up { background: #000; min-width: 35px; }
+        .column-labels { display: grid; grid-template-columns: repeat(4, 1fr); padding: 10px 0; background: #f8f9fa; font-size: 0.85rem; font-weight: bold; color: #888; text-align: center; }
 
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        td { padding: 16px 2px; text-align: center; font-size: 1.5rem; font-weight: bold; border-bottom: 1px solid #eee; color: #000; }
-        
-        .info-txt { font-size: 1.1rem; font-weight: normal; color: #555; display: block; margin-top: 5px; }
-        .minus-val { color: #e67e22 !important; }
+        td { padding: 16px 2px; text-align: center; font-size: 1.5rem; font-weight: bold; border-bottom: 1px solid #eee; }
 
         footer { text-align: center; padding: 40px 10px; font-size: 0.9rem; color: #95a5a6; font-style: italic; }
     </style>
@@ -109,17 +91,16 @@ function render() {
                 <div class="sticky-month-bar">
                     <div class="bar-main">
                         <h2 style="margin:0; font-size:1.4rem;">${m} 2026</h2>
-                        <div class="btn-group">
-                            <button class="btn btn-update" onclick="fetchData('${m}')">Update</button>
-                            <button class="btn btn-csv" onclick="exportCSV('${m}')">CSV</button>
-                            <button class="btn btn-up" onclick="window.scrollTo(0,0)">↑</button>
+                        <div style="display:flex; gap:6px;">
+                            <button style="background:#00a8ff; border:none; border-radius:6px; color:white; padding:8px 12px; font-weight:bold;" onclick="fetchData('${m}')">Update</button>
+                            <button style="background:#2ecc71; border:none; border-radius:6px; color:white; padding:8px 12px; font-weight:bold;" onclick="exportCSV('${m}')">CSV</button>
                         </div>
                     </div>
                     <div class="column-labels"><span>Datum</span><span>Min</span><span>Max</span><span>Schnitt</span></div>
                 </div>
                 <table>
                     <tbody>${data.length ? data.map(r=>`<tr>
-                        <td style="font-size: 1.4rem;">${r.d}</td>
+                        <td style="font-size:1.4rem;">${r.d}</td>
                         <td>${r.min}°</td>
                         <td>${r.max}°</td>
                         <td class="${r.avg < 0 ? 'minus-val' : ''}">${r.avg.toFixed(1).replace('.', ',')}°</td>
@@ -137,30 +118,32 @@ async function fetchData(m) {
     let endStr = `${year}-${month}-${mDays[m]}`;
     if (yesterday < new Date(endStr)) { endStr = yesterday.toISOString().split('T')[0]; }
 
-    // GeoSphere Spartacus API URL für Wolfsegg (Lat: 48.11, Lon: 13.67)
+    // GeoSphere Spartacus API (Wolfsegg 48.11, 13.67)
     const url = `https://dataset.api.hub.geosphere.at/v1/timeseries/historical/spartacus-v2-1d-1km?parameters=TN&parameters=TX&parameters=TM&lat_lon=48.11,13.67&start=${year}-${month}-01T00:00&end=${endStr}T23:59&output_format=geojson`;
 
     try {
         const res = await fetch(url);
         const json = await res.json();
+        
+        // Spartacus Datenstruktur auslesen
         const timestamps = json.timestamps;
-        const features = json.features[0].properties.parameters;
+        const paramData = json.features[0].properties.parameters;
 
-        cur[m] = timestamps.map((t, i) => {
-            const dateStr = t.split('T')[0];
+        cur[m] = timestamps.map((ts, i) => {
+            const day = ts.split('T')[0].split('-')[2];
+            const mon = ts.split('T')[0].split('-')[1];
             return {
-                d: dateStr.split('-')[2] + "." + dateStr.split('-')[1] + ".",
-                min: features.TN.data[i],
-                max: features.TX.data[i],
-                avg: features.TM.data[i]
+                d: day + "." + mon + ".",
+                min: paramData.TN.data[i],
+                max: paramData.TX.data[i],
+                avg: paramData.TM.data[i]
             };
         }).filter(item => item.min !== null);
 
         localStorage.setItem('w_2026_final_vFinal', JSON.stringify(cur));
         render();
     } catch(e) { 
-        console.error(e);
-        alert("Fehler beim Laden der Spartacus-Daten!"); 
+        alert("Fehler beim Laden! GeoSphere Daten noch nicht verfügbar?"); 
     }
 }
 
@@ -168,13 +151,11 @@ function exportCSV(m) {
     const data = cur[m];
     if(!data) return;
     let csv = "Datum;Min;Max;Schnitt\n";
-    data.forEach(r => { 
-        csv += `${r.d};${r.min.toString().replace('.', ',')};${r.max.toString().replace('.', ',')};${r.avg.toFixed(1).replace('.', ',')}\n`; 
-    });
+    data.forEach(r => { csv += `${r.d};${r.min.toString().replace('.', ',')};${r.max.toString().replace('.', ',')};${r.avg.toFixed(1).replace('.', ',')}\n`; });
     const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `Wolfsegg_Spartacus_${m}_2026.csv`;
+    link.download = `Wolfsegg_${m}_2026.csv`;
     link.click();
 }
 
